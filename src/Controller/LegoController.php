@@ -9,6 +9,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use App\Entity\Lego;
+use App\Service\CreditsGenerator;
 
 /* le nom de la classe doit être cohérent avec le nom du fichier */
 class LegoController extends AbstractController
@@ -52,20 +53,27 @@ class LegoController extends AbstractController
     //     die("Léopold");
     // }
 
-    #[Route('/{collection}', 'filter_by_collection')]
+    #[Route('/{collection}', name : 'filter_by_collection', requirements: ['collection' => 'creator|star_wars|creator_expert'])]
 public function filter($collection): Response
 {
-    $legos = [];
-    dump($this->legos);
-    foreach ($this->legos as $lego) {
-        if ($lego->getCollection() === $collection) {
-            $this->$legos[] = $lego;
-           
-        }
-    }
-    return $this->render('lego.html.twig', ['legos' => $this->legos]);
-    die($collection);
+    $filter = array_filter($this->legos, function($legoitem) use ($collection) {
+        // replace space by _ and caps by lowercase
+        $collection = ucwords(str_replace('_', ' ', $collection));
+    return $legoitem->getCollection() == $collection;
+});
+
+    return $this->render('lego.html.twig', ['legos' => $filter]);
+
 }
+
+#[Route('/credits', 'credits')]
+public function credits(CreditsGenerator $credits): Response
+{
+    return new Response($credits->getCredits());
+}
+
+
+
 
 }
 
