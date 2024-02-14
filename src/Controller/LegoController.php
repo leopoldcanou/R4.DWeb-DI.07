@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use App\Entity\Lego;
 use App\Service\CreditsGenerator;
+use App\Service\DatabaseInterface;
 
 /* le nom de la classe doit être cohérent avec le nom du fichier */
 class LegoController extends AbstractController
@@ -18,7 +19,9 @@ class LegoController extends AbstractController
 
     public function __construct()
     {
-        $data = file_get_contents(__DIR__ . '/../data.json');
+        $db = new DatabaseInterface();
+        $data = $db->getAllLegos();
+        $data = json_encode($data);
         $legoData = json_decode($data, true);
         
         $this->legos = [];
@@ -29,8 +32,8 @@ class LegoController extends AbstractController
             $lego->setDescription($item['description']);
             $lego->setPrice($item['price']);
             $lego->setPieces($item['pieces']);
-            $lego->setBoxImage($item['images']['box']);
-            $lego->setLegoImage($item['images']['bg']);
+            // $lego->setBoxImage($item['images']['box']);
+            // $lego->setLegoImage($item['images']['bg']);
             
             $this->legos[] = $lego;
         }
@@ -69,11 +72,17 @@ public function filter($collection): Response
 #[Route('/credits', 'credits')]
 public function credits(CreditsGenerator $credits): Response
 {
-    return new Response($credits->getCredits());
+    return new Response($credits->generate());
 }
 
 
-
+// use getAllLegos method from DatabaseInterface
+#[Route('/legos')]
+public function legos(DatabaseInterface $database): Response
+{
+    $legos = $database->getAllLegos();
+    
+    return $this->render('lego.html.twig', ['legos' => $legos]);
 
 }
-
+}
