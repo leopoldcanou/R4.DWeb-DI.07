@@ -11,6 +11,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use App\Entity\Lego;
 use App\Service\CreditsGenerator;
 use App\Service\DatabaseInterface;
+use Doctrine\ORM\EntityManagerInterface;
 
 /* le nom de la classe doit être cohérent avec le nom du fichier */
 class LegoController extends AbstractController
@@ -84,5 +85,24 @@ public function legos(DatabaseInterface $database): Response
     
     return $this->render('lego.html.twig', ['legos' => $legos]);
 
+}
+
+#[Route('/test')]
+public function createProduct(EntityManagerInterface $entityManager): Response
+{
+
+    $l = new Lego(1234);
+    $l->setName('Super Lego');
+    $l->setCollection('Star Wars');
+    $l->setDescription('This is a super Lego');
+    $l->setPrice(99.99);
+    $l->setPieces(1000);
+    $l->setBoxImage('super_lego.jpg');
+    $l->setLegoImage('super_lego_bg.jpg');
+
+    $entityManager->persist($l); // Persister l'objet
+    $entityManager->flush(); // Enregistrer dans la base de données
+
+    return new Response('Saved new product with id '.$l->getId());
 }
 }
