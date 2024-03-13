@@ -8,36 +8,17 @@ use stdClass;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use App\Entity\Lego;
 use App\Service\CreditsGenerator;
-use App\Service\DatabaseInterface;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Repository\LegoRepository;
 
 /* le nom de la classe doit être cohérent avec le nom du fichier */
 class LegoController extends AbstractController
 {
-    private $legos;
+    private $legoRepository;
 
-    public function __construct()
+    public function __construct(LegoRepository $legoRepository)
     {
-        $db = new DatabaseInterface();
-        $data = $db->getAllLegos();
-        $data = json_encode($data);
-        $legoData = json_decode($data, true);
-        
-        $this->legos = [];
-        
-        foreach ($legoData as $item) {
-            $lego = new Lego( $item['collection'], $item['id'], $item['name']);
-
-            $lego->setDescription($item['description']);
-            $lego->setPrice($item['price']);
-            $lego->setPieces($item['pieces']);
-            // $lego->setBoxImage($item['images']['box']);
-            // $lego->setLegoImage($item['images']['bg']);
-            
-            $this->legos[] = $lego;
-        }
+        $this->legoRepository = $legoRepository;
     }
 
     // L’attribute #[Route] indique ici que l'on associe la route
@@ -46,27 +27,25 @@ class LegoController extends AbstractController
     #[Route('/')]
     public function home(): Response
     {
-
-      
-        return $this->render('lego.html.twig', ['legos' => $this->legos]);
+// use doctrine
+        $legos = $this->legoRepository->findAll();
+        return $this->render('lego.html.twig', ['legos' => $legos]);
     }
     
-    // #[Route('/me')]
-    // public function me()
-    // {
-    //     die("Léopold");
-    // }
+
 
     #[Route('/{collection}', name : 'filter_by_collection', requirements: ['collection' => 'creator|star_wars|creator_expert'])]
 public function filter($collection): Response
 {
-    $filter = array_filter($this->legos, function($legoitem) use ($collection) {
-        // replace space by _ and caps by lowercase
-        $collection = ucwords(str_replace('_', ' ', $collection));
-    return $legoitem->getCollection() == $collection;
+$legos = $this->legoRepository->findAll();
+$collectionFormated = ucwords(str_replace('_', ' ', $collection));
+    
+
+$filteredLegos = array_filter($legos, function ($lego) use ($collectionFormated) {
+    return $lego->getCollection() === $collectionFormated;
 });
 
-    return $this->render('lego.html.twig', ['legos' => $filter]);
+return $this->render('lego.html.twig', ['legos' => $filteredLegos, 'collection' => $collectionFormated]);
 
 }
 
@@ -77,32 +56,24 @@ public function credits(CreditsGenerator $credits): Response
 }
 
 
-// use getAllLegos method from DatabaseInterface
-#[Route('/legos')]
-public function legos(DatabaseInterface $database): Response
-{
-    $legos = $database->getAllLegos();
-    
-    return $this->render('lego.html.twig', ['legos' => $legos]);
 
-}
 
-#[Route('/test')]
-public function createProduct(EntityManagerInterface $entityManager): Response
-{
+// #[Route('/test')]
+// public function createProduct(EntityManagerInterface $entityManager): Response
+// {
 
-    $l = new Lego(1234);
-    $l->setName('Super Lego');
-    $l->setCollection('Star Wars');
-    $l->setDescription('This is a super Lego');
-    $l->setPrice(99.99);
-    $l->setPieces(1000);
-    $l->setBoxImage('super_lego.jpg');
-    $l->setLegoImage('super_lego_bg.jpg');
+//     $l = new Lego(1234);
+//     $l->setName('Super Lego');
+//     $l->setCollection('Star Wars');
+//     $l->setDescription('This is a super Lego');
+//     $l->setPrice(99.99);
+//     $l->setPieces(1000);
+//     $l->setBoxImage('super_lego.jpg');
+//     $l->setLegoImage('super_lego_bg.jpg');
 
-    $entityManager->persist($l); // Persister l'objet
-    $entityManager->flush(); // Enregistrer dans la base de données
+//     $entityManager->persist($l); // Persister l'objet
+//     $entityManager->flush(); // Enregistrer dans la base de données
 
-    return new Response('Saved new product with id '.$l->getId());
-}
+//     return new Response('Saved new product with id '.$l->getId());
+// }
 }
