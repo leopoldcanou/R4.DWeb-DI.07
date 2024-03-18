@@ -2,7 +2,14 @@
 
 
 {% block body %}
+ <nav>
+    <a href="/">All</a> |
+{% for collection in collections %}
+    <a href="/{{collection.name}}">{{collection.name}}</a> |
+{% endfor %}
+</nav>
 {% for lego in legos %}
+
 <div class="lego_card">
       <div class="info_section">
         <div class="lego_header">
